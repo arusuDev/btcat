@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Real-Time Bitcoin Price</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+  <script src="https://unpkg.com/chartjs-chart-financial@0.9.0/dist/chartjs-chart-financial.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming@1.8.0"></script>
+</head>
+
+<body>
+  <canvas id="btcChart" width="800" height="400"></canvas>
+  <script>
+    var ctx = document.getElementById('btcChart').getContext('2d');
+    var chart = new Chart(ctx, {
+      type: 'candlestick',  // Change the chart type to 'candlestick'
+      data: {
+        datasets: [{
+          label: 'BTC Price',
+          data: [],
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        }]
+      },
+      options: {
+        scales: {
+          xAxes: [{
+            type: 'time'
+          }],
+          yAxes: [{
+            ticks: {
+              min: 'auto',
+              max: 'auto'
+            }
+          }]
+        }
+      }
+    });
+
+    var ws = new WebSocket('ws://localhost:8080/ws');
+
+    ws.onmessage = function (event) {
+      console.log('Received data: ' + event.data);
+
+      var candlestick = JSON.parse(event.data);
+
+      chart.data.datasets.forEach((dataset) => {
+        // Push an object with the OHLC data
+        dataset.data.push({
+          t: new Date(candlestick.time),  // The 't' property represents the timestamp
+          o: candlestick.open,
+          h: candlestick.high,
+          l: candlestick.low,
+          c: candlestick.close
+        });
+      });
+      chart.update();
+    };
+  </script>
+</body>
+
+</html>

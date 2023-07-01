@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Real-Time Bitcoin Price</title>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-streaming"></script>
+</head>
+<body>
+	<canvas id="btcChart" width="800" height="400"></canvas>
+	<script>
+		var ctx = document.getElementById('btcChart').getContext('2d');
+		var chart = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: [],
+				datasets: [{
+					label: 'BTC Price',
+					data: [],
+					borderColor: 'rgba(75, 192, 192, 1)',
+					backgroundColor: 'rgba(75, 192, 192, 0.2)',
+				}]
+			},
+			options: {
+				scales: {
+					x: { 
+						type: 'realtime', 
+						realtime: { 
+							delay: 2000 
+						} 
+					},
+					y: {
+						min:'auto',
+						max:'auto'
+					}
+				}
+			}
+		});
+
+		var ws = new WebSocket('ws://localhost:8080/ws');
+
+		ws.onmessage = function(event) {
+			console.log('Received data: ' + event.data);
+
+			var price = JSON.parse(event.data);
+			var now = Date.now();  // UNIX timestamp in milliseconds
+
+			chart.data.datasets.forEach((dataset) => {
+				dataset.data.push({ x: now, y: price });  // Push an object instead of a number
+			});
+			chart.update();
+		};
+	</script>
+</body>
+</html>

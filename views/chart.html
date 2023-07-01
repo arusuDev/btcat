@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <!-- Google Chartsのロード -->
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+  <script type="text/javascript">
+    // Google Chartsパッケージのロード
+    google.charts.load('current', { 'packages': ['corechart'] });
+    google.charts.setOnLoadCallback(drawChart);
+
+    function drawChart() {
+
+      // データテーブルの作成
+      var data = google.visualization.arrayToDataTable([
+        ['Date', 'Low', 'Open', 'Close', 'High'],
+        ['2016-12-28', 13000, 13548, 13984, 14049],
+        ['2016-12-27', 12574, 12937, 13548, 13612],
+        ['2016-12-26', 12356, 12574, 12937, 13014],
+        ['2016-12-23', 12230, 12356, 12574, 12641],
+        ['2016-12-22', 12104, 12230, 12356, 12423]
+      ]);
+
+      // オプションの設定
+      var options = {
+        legend: 'none',
+        bar: { groupWidth: '80%' },
+        candlestick: {
+          fallingColor: { strokeWidth: 0, fill: '#a52714' },
+          risingColor: { strokeWidth: 0, fill: '#0f9d58' }
+        }
+      };
+
+      // チャートの描画
+      var chart = new google.visualization.CandlestickChart(document.getElementById('chart_div'));
+      chart.draw(data, options);
+    }
+  </script>
+</head>
+
+<body>
+  <!-- チャート描画領域の設定 -->
+  <div id="chart_div" style="width: 900px; height: 500px;"></div>
+</body>
+
+</html>
