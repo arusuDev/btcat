@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"encoding/json"
 	"log"
 	"os"
 	"os/signal"
@@ -13,7 +14,7 @@ import (
 // https://bf-lightning-api.readme.io/docs/endpoint-json-rpc
 const bitFlyerRealtimeEndpoint = "wss://ws.lightstream.bitflyer.com/json-rpc"
 
-func RealtimeTicker() {
+func RealtimeTicker(priceDataChan chan<- PriceData) {
 	// 外部からのSignalを受け取るためのチャネルを作成
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
@@ -46,10 +47,25 @@ func RealtimeTicker() {
 		for {
 			_, message, err := c.ReadMessage()
 			if err != nil {
-				log.Println("read message error : %s\n", err)
+				log.Printf("read message error : %s\n", err)
 				return
 			}
 			log.Printf("message : %s\n", message)
+
+			// 受信したメッセージをPriceData型に変換
+			var priceData PriceData
+			var data Data
+			if err := json.Unmarshal(message, &data); err != nil {
+				log.Printf("Error unmarshalling params: %v", err)
+				continue
+			}
+
+			priceData = data.Params.Message
+			log.Printf(priceData.Timestamp)
+			log.Printf("%f\n", priceData.BestAsk)
+			log.Printf("%f\n", priceData.BestBid)
+			// チャネルにpriceDataを送信
+			priceDataChan <- priceData
 		}
 	}()
 
@@ -62,7 +78,7 @@ func RealtimeTicker() {
 
 			err := c.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				log.Println("Websocket disconnection error:%s", err)
+				log.Printf("Websocket disconnection error:%s", err)
 				return
 			}
 			select {

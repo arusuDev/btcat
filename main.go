@@ -4,13 +4,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
-	"time"
 
 	"arusu.info/btcat/apps"
 )
@@ -33,49 +28,56 @@ func generateSign(secret, method, path, timestamp, body string) string {
 
 func main() {
 	// BitflyerのAPIキーを読み取り
-	apiKey := os.Getenv("BF_KEY")
-	apiSecret := os.Getenv("BF_SECRET")
+	// apiKey := os.Getenv("BF_KEY")
+	// apiSecret := os.Getenv("BF_SECRET")
 
-	timestamp := strconv.FormatInt(time.Now().Unix(), 10)
-	method := "GET"
-	baseURL := "https://api.bitflyer.com"
-	endpoint := "/v1/me/getbalance"
-	body := ""
+	// timestamp := strconv.FormatInt(time.Now().Unix(), 10)
+	// method := "GET"
+	// baseURL := "https://api.bitflyer.com"
+	// endpoint := "/v1/me/getbalance"
+	// body := ""
 
-	// HMAC-SHA256証明を作成
-	sign := generateSign(apiSecret, method, endpoint, timestamp, body)
+	// // HMAC-SHA256証明を作成
+	// sign := generateSign(apiSecret, method, endpoint, timestamp, body)
 
-	// endpointに向けたGETリクエストを作成
-	req, err := http.NewRequest(method, baseURL+endpoint, nil)
-	if err != nil {
-		log.Fatalf("failed to create request: %v", err)
-	}
+	// // endpointに向けたGETリクエストを作成
+	// req, err := http.NewRequest(method, baseURL+endpoint, nil)
+	// if err != nil {
+	// 	log.Fatalf("failed to create request: %v", err)
+	// }
 
-	// Headerに必要な情報を追加
-	req.Header.Add("ACCESS-KEY", apiKey)
-	req.Header.Add("ACCESS-TIMESTAMP", timestamp)
-	req.Header.Add("ACCESS-SIGN", sign)
-	req.Header.Add("Content-Type", "application/json")
+	// // Headerに必要な情報を追加
+	// req.Header.Add("ACCESS-KEY", apiKey)
+	// req.Header.Add("ACCESS-TIMESTAMP", timestamp)
+	// req.Header.Add("ACCESS-SIGN", sign)
+	// req.Header.Add("Content-Type", "application/json")
 
-	// APIを実行するためのクライアントを作成
-	// このクライアントを通してGET/PUTメソッドを実行する
-	client := &http.Client{}
+	// // APIを実行するためのクライアントを作成
+	// // このクライアントを通してGET/PUTメソッドを実行する
+	// client := &http.Client{}
 
-	// 作成したリクエストを実行する
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("failed to do request: %v", err)
-	}
+	// // 作成したリクエストを実行する
+	// resp, err := client.Do(req)
+	// if err != nil {
+	// 	log.Fatalf("failed to do request: %v", err)
+	// }
 
-	// 本関数が終了時にレスポンスのbodyをクローズする
-	// deferは予約
-	defer resp.Body.Close()
+	// // 本関数が終了時にレスポンスのbodyをクローズする
+	// // deferは予約
+	// defer resp.Body.Close()
 
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("failed to read response body : %v", err)
-	}
+	// respBody, err := ioutil.ReadAll(resp.Body)
+	// if err != nil {
+	// 	log.Fatalf("failed to read response body : %v", err)
+	// }
 
-	fmt.Println(string(respBody))
-	apps.RealtimeTicker()
+	// fmt.Println(string(respBody))
+
+	priceDataChan := make(chan apps.PriceData)
+	go apps.RealtimeTicker(priceDataChan)
+
+	http.HandleFunc("/price", apps.PriceHandler(priceDataChan))
+
+	// サーバの起動
+	log.Fatal(http.ListenAndServe(":3000", nil))
 }
