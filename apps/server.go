@@ -1,6 +1,7 @@
 package apps
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -13,39 +14,6 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true // 全てのオリジンを許可する
 	},
-}
-
-type PriceData struct {
-	ProductCode     string  `json:"product_code"`
-	Timestamp       string  `json:"timestamp"`
-	State           string  `json:"state"`
-	TickID          int     `json:"tick_id"`
-	BestBid         float64 `json:"best_bid"`
-	BestAsk         float64 `json:"best_ask"`
-	BestBidSize     float64 `json:"best_bid_size"`
-	BestAskSize     float64 `json:"best_ask_size"`
-	TotalBidDepth   float64 `json:"total_bid_depth"`
-	TotalAskDepth   float64 `json:"total_ask_depth"`
-	MarketBidSize   float64 `json:"market_bid_size"`
-	MarketAskSize   float64 `json:"market_ask_size"`
-	LTP             float64 `json:"ltp"`
-	Volume          float64 `json:"volume"`
-	VolumeByProduct float64 `json:"volume_by_product"`
-}
-
-type Message struct {
-	Message PriceData `json:"message"`
-}
-
-type Params struct {
-	Channel string    `json:"channel"`
-	Message PriceData `json:"message"`
-}
-
-type Data struct {
-	Jsonrpc string `json:"jsonrpc"`
-	Method  string `json:"method"`
-	Params  Params `json:"params"`
 }
 
 func PriceHandler(priceDataChan <-chan PriceData) http.HandlerFunc {
@@ -80,11 +48,16 @@ func PriceHandler(priceDataChan <-chan PriceData) http.HandlerFunc {
 			select {
 			case priceData := <-priceDataChan:
 				// 価格データを取得
-				// fmt.Println(priceData.BestAsk)
+				var ema float64
 				// 価格データを追加
-				prices = CalcTechnical(prices, priceData.BestAsk)
-
-				if err := conn.WriteJSON(priceData); err != nil {
+				ema, prices = CalcTechnical(prices, priceData.BestAsk)
+				fmt.Println("\npriceData.BestAsk", priceData.BestAsk)
+				chartData := ChartData{
+					Price:     fmt.Sprintf("%.10f", priceData.BestAsk),
+					EMA:       fmt.Sprintf("%.10f", ema),
+					Timestamp: priceData.Timestamp,
+				}
+				if err := conn.WriteJSON(chartData); err != nil {
 					log.Println(err)
 					return
 				}

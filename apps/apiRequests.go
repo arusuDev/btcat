@@ -7,12 +7,12 @@ import (
 	"os/signal"
 	"time"
 
+	"arusu.info/btcat/conf"
 	"github.com/gorilla/websocket"
 )
 
 // WebSocketのエンドポイント
 // https://bf-lightning-api.readme.io/docs/endpoint-json-rpc
-const bitFlyerRealtimeEndpoint = "wss://ws.lightstream.bitflyer.com/json-rpc"
 
 func RealtimeTicker(priceDataChan chan<- PriceData) {
 	// 外部からのSignalを受け取るためのチャネルを作成
@@ -20,7 +20,7 @@ func RealtimeTicker(priceDataChan chan<- PriceData) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	c, _, err := websocket.DefaultDialer.Dial(bitFlyerRealtimeEndpoint, nil)
+	c, _, err := websocket.DefaultDialer.Dial(conf.BitFlyerRealtimeEndpoint, nil)
 	if err != nil {
 		log.Fatalf("WebSocket connection error: %v", err)
 	}
@@ -52,7 +52,6 @@ func RealtimeTicker(priceDataChan chan<- PriceData) {
 				done <- struct{}{}
 				return
 			}
-			// log.Printf("message : %s\n", message)
 
 			// 受信したメッセージをPriceData型に変換
 			var priceData PriceData

@@ -7,8 +7,10 @@
     google.charts.load('current', { 'packages': ['corechart'] });
     google.charts.setOnLoadCallback(drawChart);
 
-    var data;
-    var chart;
+    var priceData;
+    var emaData;
+    var priceChart;
+    var emaChart;
     var socket;
 
     function drawChart() {
@@ -18,12 +20,17 @@
       };
 
       socket.onmessage = function (event) {
-        var priceData = JSON.parse(event.data);
+        var chartData = JSON.parse(event.data);
 
-        // console.log(priceData);
-        // PriceDataから価格とタイムスタンプ（またはTick IDなど）を取得し、グラフに追加
-        addData(priceData.timestamp, priceData.ltp);
+        // Convert price and ema to float numbers
+        var price = parseFloat(chartData.price_data);
+        var ema = parseFloat(chartData.ema);
+
+        // ChartDataから価格、EMAとタイムスタンプ（またはTick IDなど）を取得し、グラフに追加
+        addPriceData(chartData.timestamp, price);
+        addEMAData(chartData.timestamp, ema);
       };
+
 
       socket.onclose = function (event) {
         console.log('Disconnected from server');
@@ -32,14 +39,19 @@
       socket.onerror = function (error) {
         console.log('Error occurred:', error);
       };
-      var start = new Date();
-      data = google.visualization.arrayToDataTable([
-        ["date","price"],
-        ['0',4000000]
-        // 初期データを設定 (例えば, ['0', 0])
+      
+      priceData = google.visualization.arrayToDataTable([
+        ["date","price"], 
+        ['0',4000000] 
       ]);
 
-      chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+      emaData = google.visualization.arrayToDataTable([
+        ["date","ema"],
+        ['0',0]
+      ]);
+
+      priceChart = new google.visualization.LineChart(document.getElementById('price_chart'));
+      emaChart = new google.visualization.LineChart(document.getElementById('ema_chart'));
 
       var options = {
         title: 'Price Data',
@@ -47,35 +59,56 @@
         legend: { position: 'bottom' }
       };
 
-      chart.draw(data, options);
-      data.removeRow(0);
+      priceChart.draw(priceData, options);
+      priceData.removeRow(0);
+
+      emaChart.draw(emaData, options);
+      emaData.removeRow(0);
     }
 
-  function addData(tick, price) {
-    var dateTick = new Date(tick);
-    if (isNaN(dateTick)) { // 日付が無効な場合は処理を中断
-      console.log('無効な日付です:', tick);
-      return;
+    function addPriceData(tick, price) {
+      var dateTick = new Date(tick);
+      if (isNaN(dateTick)) { // 日付が無効な場合は処理を中断
+        console.log('無効な日付です:', tick);
+        return;
+      }
+      var formattedDate = ("00"+dateTick.getHours()).slice(-2)+":"+("00"+dateTick.getMinutes()).slice(-2)+":"+("00"+dateTick.getSeconds()).slice(-2); 
+      if (priceData.getNumberOfRows() > 200) {
+        priceData.removeRow(0);
+      }
+      console.log(formattedDate + ":" + price);
+      priceData.addRow([formattedDate, price]); 
+      priceChart.draw(priceData, null); // <- ここを修正
     }
-    var formattedDate = ("00"+dateTick.getHours()).slice(-2)+":"+("00"+dateTick.getMinutes()).slice(-2)+":"+("00"+dateTick.getSeconds()).slice(-2); 
-    if (data.getNumberOfRows() > 200) {
-      data.removeRow(0);
+
+    function addEMAData(tick, ema) {
+      var dateTick = new Date(tick);
+      if (isNaN(dateTick)) { // 日付が無効な場合は処理を中断
+        console.log('無効な日付です:', tick);
+        return;
+      }
+      var formattedDate = ("00"+dateTick.getHours()).slice(-2)+":"+("00"+dateTick.getMinutes()).slice(-2)+":"+("00"+dateTick.getSeconds()).slice(-2); 
+      if (emaData.getNumberOfRows() > 200) {
+        emaData.removeRow(0);
+      }
+      console.log(formattedDate + ":" + ema);
+      emaData.addRow([formattedDate, ema]); 
+      emaChart.draw(emaData, null); // <- ここを修正
     }
-    console.log(formattedDate+":"+price)
-    data.addRow([formattedDate, price]); // フォーマット済みの日付を使用
-    chart.draw(data, null);
-  }
 
-
-  window.addEventListener('beforeunload', function (event) {
-    socket.close();
-  });
+    window.addEventListener('beforeunload', function (event) {
+      socket.close();
+    });
 
   </script>
 </head>
 
 <body>
-  <div id="curve_chart" style="width: 900px; height: 500px"></div>
+  <body>
+    <div id="price_chart" style="width: 900px; height: 500px"></div>
+    <div id="ema_chart" style="width: 900px; height: 500px"></div>
+  </body>
+  
 </body>
 
 </html>
