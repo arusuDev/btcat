@@ -1,7 +1,6 @@
 package apps
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -51,12 +50,16 @@ type Data struct {
 
 func PriceHandler(priceDataChan <-chan PriceData) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var prices []float64
 		// WebSocket接続を開始
+		// http.ResponseWriterとhttp.Requestを受け取って、
+		// WebSocket通信にアップグレードしてくれる。
 		conn, err := upgrader.Upgrade(w, r, nil)
 		if err != nil {
 			log.Println("failed to upgrade:", err)
 			return
 		}
+		// WebSocket通信は、開いたら繋ぎっぱなしになるため、終了することを保証
 		defer conn.Close()
 
 		// 接続が閉じられたことを示すためのチャンネル
@@ -77,7 +80,9 @@ func PriceHandler(priceDataChan <-chan PriceData) http.HandlerFunc {
 			select {
 			case priceData := <-priceDataChan:
 				// 価格データを取得
-				fmt.Println(priceData.BestAsk)
+				// fmt.Println(priceData.BestAsk)
+				// 価格データを追加
+				prices = CalcTechnical(prices, priceData.BestAsk)
 
 				if err := conn.WriteJSON(priceData); err != nil {
 					log.Println(err)

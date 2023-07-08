@@ -16,6 +16,7 @@ const bitFlyerRealtimeEndpoint = "wss://ws.lightstream.bitflyer.com/json-rpc"
 
 func RealtimeTicker(priceDataChan chan<- PriceData) {
 	// 外部からのSignalを受け取るためのチャネルを作成
+	// バッファサイズ1 →ひとつのみ値を保持し、吐き出されるまで入力をブロックする
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
@@ -48,9 +49,10 @@ func RealtimeTicker(priceDataChan chan<- PriceData) {
 			_, message, err := c.ReadMessage()
 			if err != nil {
 				log.Printf("read message error : %s\n", err)
+				done <- struct{}{}
 				return
 			}
-			log.Printf("message : %s\n", message)
+			// log.Printf("message : %s\n", message)
 
 			// 受信したメッセージをPriceData型に変換
 			var priceData PriceData
@@ -61,9 +63,6 @@ func RealtimeTicker(priceDataChan chan<- PriceData) {
 			}
 
 			priceData = data.Params.Message
-			log.Printf(priceData.Timestamp)
-			log.Printf("%f\n", priceData.BestAsk)
-			log.Printf("%f\n", priceData.BestBid)
 			// チャネルにpriceDataを送信
 			priceDataChan <- priceData
 		}

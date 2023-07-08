@@ -1,5 +1,18 @@
 package bitflyer_trading
 
+// 実際に取引する場合に利用するbitflyerのclientを作成する。
+// 以下関数を持つ
+import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
+	"log"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+)
+
 // 受け取った文字列を結合し、HMAC-SHA256署名を作成する
 func generateSign(secret, method, path, timestamp, body string) string {
 	message := timestamp + method + path + body
@@ -16,8 +29,8 @@ func generateSign(secret, method, path, timestamp, body string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func GetBitflyer() &http.Client {
-	BitflyerのAPIキーを読み取り
+func GetBitflyer() *http.Client {
+	// BitflyerのAPIキーを読み取り
 	apiKey := os.Getenv("BF_KEY")
 	apiSecret := os.Getenv("BF_SECRET")
 
@@ -45,21 +58,5 @@ func GetBitflyer() &http.Client {
 	// APIを実行するためのクライアントを作成
 	// このクライアントを通してGET/PUTメソッドを実行する
 	client := &http.Client{}
-
-	// 作成したリクエストを実行する
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("failed to do request: %v", err)
-	}
-
-	// 本関数が終了時にレスポンスのbodyをクローズする
-	// deferは予約
-	defer resp.Body.Close()
-
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("failed to read response body : %v", err)
-	}
-
-	fmt.Println(string(respBody))
+	return client
 }

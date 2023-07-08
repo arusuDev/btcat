@@ -1,9 +1,6 @@
 package main
 
 import (
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/hex"
 	"log"
 	"net/http"
 
@@ -11,6 +8,7 @@ import (
 )
 
 func main() {
+
 	// リアルタイムで価格を取得するためのチャネルを作成する
 	priceDataChan := make(chan apps.PriceData)
 	// Goroutineで価格情報を取得する
