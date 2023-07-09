@@ -6,15 +6,28 @@ import (
 	"arusu.info/btcat/conf"
 )
 
-func MACD(prices []float64) {
-	// TODO
-	// short, long, macd, err := macd_Line(prices)
-	// if err != nil {
-	// 	panic(err)
-	// }
+// MACDを計算する
+func MACD(macdValues, prices []float64) ([]float64, float64, float64, float64, float64, float64, error) {
+	short, long, macdLine, err := macd_Line(prices)
+	if err != nil {
+		return macdValues, 0, 0, 0, 0, 0, err
+	}
 
-	// signal_EMA := EMA(prices,conf.SignalEMA)
+	// Signal Lineの計算
+	macdValues = append(macdValues, macdLine)
+	if len(macdValues) > conf.SignalEMAPeriod {
+		macdValues = macdValues[1:]
+	}
 
+	signalLine := EMA(macdValues, conf.SignalEMAPeriod)
+
+	if len(signalLine) < 1 {
+		return macdValues, 0, 0, 0, 0, 0, errors.New("not enough data")
+	}
+
+	histogram := macdLine - signalLine[len(signalLine)-1]
+
+	return macdValues, short, long, macdLine, signalLine[len(signalLine)-1], histogram, nil
 }
 
 func macd_Line(prices []float64) (float64, float64, float64, error) {

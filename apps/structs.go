@@ -1,9 +1,17 @@
 package apps
 
+type Technical struct {
+	ShortEMA  string `json:"short_ema"`
+	LongEMA   string `json:"long_ema"`
+	MACD      string `json:"macd_line"`
+	SignalEMA string `json:"signal_ema"`
+	Histogram string `json:"histogram"`
+}
+
 type ChartData struct {
-	Price     string `json:"price_data"`
-	EMA       string `json:"ema"`
-	Timestamp string `json:"timestamp"`
+	Price     string    `json:"price_data"`
+	Timestamp string    `json:"timestamp"`
+	Technical Technical `json:"technical"`
 }
 
 type PriceData struct {
